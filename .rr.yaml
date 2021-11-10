@@ -1,0 +1,9 @@
+grpc:
+  # socket to listen
+  listen: ${GRPC_ADDRESS}
+
+  # proto root file
+  proto: "proto/app.proto"
+
+  workers:
+    command: 'php bin/console b2b:grpc:worker'

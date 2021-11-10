@@ -1,0 +1,67 @@
+---
+image: registry.b2bdev.pro/docker/php/php-dev:8.0-fpm
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_DEPTH: 1
+
+stages:
+  - prepare
+  - tests
+  - build-image
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - vendor/
+
+composer:
+  stage: prepare
+  cache:
+    paths:
+      - .composer-cache/
+  before_script:
+    - composer config -g cache-dir "$(pwd)/.composer-cache"
+    - composer config -g http-basic.gitlab.b2bdev.pro ___token___ ${DEPLOY_TOKEN}
+  script:
+    - composer install --no-ansi --no-interaction --no-progress --no-scripts
+  artifacts:
+    expire_in: 1 days
+    paths:
+      - vendor/
+      - .env
+
+codestyle:
+  stage: tests
+  dependencies:
+    - composer
+  script:
+    - composer codestyle
+
+static-analysis:
+  stage: tests
+  dependencies:
+    - composer
+  script:
+    - composer static-analysis
+
+tests:
+  stage: tests
+  dependencies:
+    - composer
+  script:
+    - composer test
+
+build-image:
+  stage: build-image
+  dependencies:
+    - composer
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_BUILD_REF
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG

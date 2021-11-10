@@ -1,0 +1,97 @@
+nelmio_api_doc:
+  areas: # to filter documented areas
+    path_patterns:
+      - ^/api(?!/doc$) # Accepts routes under /api except /api/doc
+
+  documentation:
+#    servers: [
+#      { 'url': "%env(APP_SERVER_URL)%" }
+#    ]
+    info:
+      title: "Report Service API"
+      description: "Report Service OpenAPI documentation."
+      version: "1.0.0"
+
+    security:
+      - Bearer: [ ]
+
+    components:
+      securitySchemes:
+        Bearer:
+          type: apiKey
+          description: "Value: Bearer {jwt}"
+          name: "Authorization"
+          in: header
+
+      schemas:
+        general_error:
+          title: "General error"
+          description: "General exception"
+          type: object
+          properties:
+            code:
+              type: integer
+              readOnly: true
+            message:
+              type: string
+              readOnly: true
+        validation_error:
+          title: "Validation errors"
+          description: "Validation errors"
+          type: object
+          properties:
+            code:
+              type: integer
+              readOnly: true
+            errors:
+              type: array
+              items:
+                type: string
+        server_error:
+          title: "Server error"
+          description: "General server exception"
+          type: object
+          properties:
+            code:
+              type: integer
+              readOnly: true
+            message:
+              type: string
+              readOnly: true
+            meta:
+              type: array
+              items:
+                type: string
+      responses:
+        GeneralError:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/general_error"
+        Unauthorized:
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/general_error"
+        ServerUnavailable:
+          description: Filed to connect to server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/server_error"
+        NotFound:
+          description: The specified resource was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/general_error"
+        ValidationError:
+          description: Request parameters are invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/validation_error"
+
+

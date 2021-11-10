@@ -1,0 +1,56 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+    db.config.clickhouse:
+        host: '%env(CLICKHOUSE_HOST)%'
+        username: '%env(CLICKHOUSE_USER)%'
+        password: '%env(CLICKHOUSE_PASSWORD)%'
+        database: '%env(CLICKHOUSE_DB)%'
+        port: '%env(CLICKHOUSE_PORT)%'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    _instanceof:
+        App\Service\Report\ReportInterface:
+            tags: [!php/const App\Service\ReportFactory::SERVICE_TAG]
+        App\Service\RequestFilter\RequestFilterMapperInterface:
+            tags: [!php/const App\Service\ReportRequestFilterFactory::SERVICE_TAG ]
+        App\Clickhouse\Migration\ClickhouseMigrationInterface:
+            tags: [!php/const App\Clickhouse\Migration\ClickhouseMigrationRunner::SERVICE_TAG]
+
+    B2B\ErrorHandleBundle\EventListener\InvalidJsonExceptionListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.exception, priority: 2 }
+
+    B2B\ErrorHandleBundle\EventListener\ExceptionToJsonListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.exception, priority: 1 }
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Tests/'
+
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: [ 'controller.service_arguments' ]
+
+    App\DB\Connection:
+        arguments:
+            - '%db.config.clickhouse%'
+
+    clickhouse_migrations:
+        namespace: Clickhouse\Migration\
+        resource: '../migrations_clickhouse'
