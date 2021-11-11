@@ -1,4 +1,4 @@
-# INSTALL
+# MIGRATION for CK
  
 Inside docker execute:
  - Run migrations up: `php bin/console clickhouse:migrate`
